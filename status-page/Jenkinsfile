@@ -17,24 +17,21 @@ pipeline {
         '''
       }
     }
-    stage('Clone Repo') {
+    stage('Checkout SCM') {
       steps {
-        sh '''
-          rm -rf demos
-          git clone https://github.com/digital-knife/demos.git
-        '''
+        checkout scm
       }
     }
     stage('Lint Helm Chart') {
       steps {
-        dir('demos/helm-projects/status-page') {
+        dir('status-page') {
           sh '$WORKSPACE/bin/helm lint .'
         }
       }
     }
     stage('Test Deploy') {
       steps {
-        dir('demos/helm-projects/status-page') {
+        dir('status-page') {
           sh '$WORKSPACE/bin/helm template . --debug'
         }
       }
@@ -42,7 +39,7 @@ pipeline {
     stage('Deploy to Minikube') {
       when { expression { env.GIT_BRANCH == 'origin/main' || env.BRANCH_NAME == 'main' } }
       steps {
-        dir('demos/helm-projects/status-page') {
+        dir('status-page') {
           sh '$WORKSPACE/bin/helm upgrade --install status-page . --set service.type=NodePort -n default'
         }
       }
