@@ -1,0 +1,8 @@
+grafana:
+  enabled: true
+  service:
+    type: NodePort
+prometheus:
+  enabled: true
+  service:
+    type: NodePort
