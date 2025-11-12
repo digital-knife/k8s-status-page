@@ -245,3 +245,4 @@ kubectl get events --sort-by='.lastTimestamp'
 # Test connectivity
 kubectl run -it --rm debug --image=busybox --restart=Never -- sh
 ```
+test
