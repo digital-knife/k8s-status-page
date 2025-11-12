@@ -1,0 +1,30 @@
+# Helm
+.helm/
+*.tgz
+charts/
+
+# Kubernetes
+*.kubeconfig
+kubeconfig
+
+# Terraform (if any infrastructure code)
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*

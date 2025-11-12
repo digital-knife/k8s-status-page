@@ -1,0 +1,22 @@
+prometheus:
+  prometheusSpec:
+    additionalScrapeConfigs:
+      - job_name: status-page
+        static_configs:
+          - targets: ['status-page.default.svc.cluster.local:80']
+        metrics_path: /metrics
+        scrape_interval: 30s
+      - job_name: jenkins
+        static_configs:
+          - targets: ['jenkins.jenkins.svc.cluster.local:8080']
+        metrics_path: /metrics
+        scrape_interval: 30s
+grafana:
+  enabled: true
+  adminPassword: admin
+defaultRules:
+  rules:
+    prometheus:
+      alertmanagers:
+        - static_configs:
+            - targets: ['alertmanager-operated.monitoring.svc:9093']

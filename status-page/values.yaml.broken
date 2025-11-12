@@ -1,0 +1,50 @@
+replicaCount: 1
+
+image:
+  repository: python
+  tag: "3.11-slim"
+  pullPolicy: IfNotPresent
+
+app:
+  port: 5000
+  healthCheckPath: /health
+  # Added: Command/args to actually start the server (fixes "connection refused")
+  command: ["python3"]
+  args: ["-c", "import http.server, socketserver, json, os; PORT=5000; HEALTH_PATH='/health'; class HealthHandler(http.server.BaseHTTPRequestHandler): def do_GET(self): if self.path == HEALTH_PATH: self.send_response(200); self.send_header('Content-type', 'application/json'); self.end_headers(); self.wfile.write(json.dumps({'status': 'ok'}).encode()) elif self.path == '/': self.send_response(200); self.send_header('Content-type', 'application/json'); self.end_headers(); self.wfile.write(json.dumps({'status': 'healthy', 'version': '1.0', 'deployed_via': 'Helm on Minikube', 'targets': {{ .Values.app.targets | toJson }}}).encode()) else: self.send_response(404); self.end_headers(); httpd = socketserver.TCPServer(('', PORT), HealthHandler); print(f'Status Server on port {PORT}'); httpd.serve_forever()"]
+  targets:
+    - name: jenkins
+      url: http://jenkins:8080
+      expectedStatus: 200
+    - name: website
+      url: http://http-echo:5678
+      expectedStatus: 200
+
+serviceAccount:
+  create: false
+
+service:
+  type: ClusterIP  # Toggle to NodePort via --set for external access
+  port: 80
+  nodePort: 30080  # Added: Only applies if type=NodePort
+
+resources:
+  limits:
+    cpu: "200m"
+    memory: "256Mi"
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+
+livenessProbe:
+  httpGet:
+    path: {{ .Values.app.healthCheckPath }}
+    port: {{ .Values.app.port }}
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: {{ .Values.app.healthCheckPath }}
+    port: {{ .Values.app.port }}
+  initialDelaySeconds: 5
+  periodSeconds: 5

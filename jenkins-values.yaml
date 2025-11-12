@@ -1,0 +1,15 @@
+controller:
+  serviceType: NodePort
+  servicePort: 8080
+  nodePort: 30921  # Optional: Fixed port (or auto 30000-32767)
+  initContainer:
+    enabled: false
+  cascading:
+    enabled: false  # Disables Casc plugin (causes the init script)
+  resources:
+    limits:
+      cpu: 2
+      memory: 4Gi
+    requests:
+      cpu: 1
+      memory: 2Gi

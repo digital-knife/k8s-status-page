@@ -1,0 +1,60 @@
+pipeline {
+  agent any
+  stages {
+    stage('Install Tools') {
+      steps {
+        sh '''
+          mkdir -p bin
+          curl -LO https://get.helm.sh/helm-v3.14.0-linux-amd64.tar.gz
+          tar -zxvf helm-v3.14.0-linux-amd64.tar.gz
+          mv linux-amd64/helm bin/
+          chmod +x bin/helm
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          mv kubectl bin/
+          $WORKSPACE/bin/kubectl version --client
+          $WORKSPACE/bin/helm version
+        '''
+      }
+    }
+    stage('Clone Repo') {
+      steps {
+        sh '''
+          rm -rf demos
+          git clone https://github.com/digital-knife/demos.git
+        '''
+      }
+    }
+    stage('Lint Helm Chart') {
+      steps {
+        dir('demos/helm-projects/status-page') {
+          sh '$WORKSPACE/bin/helm lint .'
+        }
+      }
+    }
+    stage('Test Deploy') {
+      steps {
+        dir('demos/helm-projects/status-page') {
+          sh '$WORKSPACE/bin/helm template . --debug'
+        }
+      }
+    }
+    stage('Deploy to Minikube') {
+      when { expression { env.GIT_BRANCH == 'origin/main' || env.BRANCH_NAME == 'main' } }
+      steps {
+        dir('demos/helm-projects/status-page') {
+          sh '$WORKSPACE/bin/helm upgrade --install status-page . --set service.type=NodePort -n default'
+        }
+      }
+    }
+  }
+  post {
+    always {
+      sh 'echo "Branch in post: $BRANCH_NAME"'
+      sh '$WORKSPACE/bin/kubectl get pods -l app.kubernetes.io/name=status-page -n default'
+    }
+    failure {
+      sh 'echo "Pipeline failed—check Prometheus alerts"'
+    }
+  }
+}
